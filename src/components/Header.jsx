@@ -1,16 +1,22 @@
-import React from 'react'
+import React, { useState } from 'react'
 import logo from '../assets/logo.png'
 import Button from './Button'
 import '../css/Header.css'
+import { Link } from 'react-router-dom'
 
 const Header = () => {
+    const [query, setQuery] = useState("");
     return (
         <header>
-            <nav>
+            <nav className='maxWidth'>
                 <img src={logo} alt="logo" />
                 <div className="search-container">
-                    <input type="text" placeholder='Procure por nome ou ID' />
-                    <Button label={'Search'} />
+                    <input type="text"
+                        placeholder='Procure por nome ou ID' value={query}
+                        onChange={(e) => setQuery(e.target.value)} />
+                    <Link to={`/${query}`}>
+                        <Button label={'Search'} />
+                    </Link>
                 </div>
             </nav>
         </header>

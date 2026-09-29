@@ -2,6 +2,7 @@ import React, { use, useEffect, useState } from 'react'
 
 import Header from '../components/Header'
 import Feed from '../components/Feed.jsx'
+import LoadingScreen from '../components/LoadingScreen.jsx';
 
 export const Home = () => {
   const [pokemons, setPokemons] = useState([]);
@@ -9,26 +10,51 @@ export const Home = () => {
     const storedOffSet = sessionStorage.getItem("offset");
     return storedOffSet ? parseInt(storedOffSet, 10) : 0;
   });
+  const [loading, setLoading] = useState(true)
+
+  function handleNextPage() {
+    const newOffSet = offSet + 50;
+    setOffSet(newOffSet);
+    sessionStorage.setItem("offset", newOffSet.toString());
+  }
+
+  function handlePreviusPage() {
+    const newOffSet = offSet <= 50 ? 0 : offSet - 50;
+    setOffSet(newOffSet);
+    sessionStorage.setItem('offset', newOffSet.toString());
+  }
 
   useEffect(() => {
     async function fetchPokemon() {
       const apiUrl = `https://pokeapi.co/api/v2/pokemon?limit=50&offset=${offSet}`
 
       const res = await fetch(apiUrl);
-      const data = await res.json(); 
+      const data = await res.json();
 
       setPokemons(data.results);
+      setTimeout(() => {
+        setLoading(false)
+      }, 500)
     }
     fetchPokemon()
-  }, [offSet])
+  }, [offSet]);
+  useEffect(() => {
+    setLoading(true)
+  }, [offSet]);
+
   return (
     <div className='Home maxWidth'>
-      <Header />
-      <Feed pokemons={pokemons}/>
-      <div className="pagination">
-        <button className='btn'>Voltar</button>
-        <button className='btn'>Proximo</button>
-      </div>
+      {loading && <LoadingScreen />}
+      {!loading && (
+        <>
+          <Header />
+          <Feed pokemons={pokemons} />
+          <div className="pagination">
+            <button onClick={handlePreviusPage} className='btn'>Voltar</button>
+            <button onClick={handleNextPage} className='btn'>Proximo</button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

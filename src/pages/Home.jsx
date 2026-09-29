@@ -1,8 +1,9 @@
-import React, { use, useEffect, useState } from 'react'
-
+import React, { useEffect, useState } from 'react'
 import Header from '../components/Header'
 import Feed from '../components/Feed.jsx'
 import LoadingScreen from '../components/LoadingScreen.jsx';
+import axios from 'axios';
+import { Button, Box } from '@mui/material';
 
 export const Home = () => {
   const [pokemons, setPokemons] = useState([]);
@@ -10,7 +11,11 @@ export const Home = () => {
     const storedOffSet = sessionStorage.getItem("offset");
     return storedOffSet ? parseInt(storedOffSet, 10) : 0;
   });
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true);
+
+  // Estados dos filtros que vão para o Header
+  const [searchQuery, setSearchQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
 
   function handleNextPage() {
     const newOffSet = offSet + 50;
@@ -26,35 +31,78 @@ export const Home = () => {
 
   useEffect(() => {
     async function fetchPokemon() {
-      const apiUrl = `https://pokeapi.co/api/v2/pokemon?limit=50&offset=${offSet}`
+      setLoading(true);
+      const apiUrl = `https://pokeapi.co/api/v2/pokemon?limit=50&offset=${offSet}`;
 
-      const res = await fetch(apiUrl);
-      const data = await res.json();
+      try {
+        const res = await axios.get(apiUrl);
+        const basicPokemons = res.data.results;
 
-      setPokemons(data.results);
+
+        const detailedPokemons = await Promise.all(
+          basicPokemons.map(async (pokemon) => {
+            const pokeDetails = await axios.get(pokemon.url);
+            return {
+              ...pokemon, 
+              types: pokeDetails.data.types.map(t => t.type.name) 
+            };
+          })
+        );
+
+        setPokemons(detailedPokemons);
+      } catch (error) {
+        console.error("Erro ao buscar pokemons:", error);
+      }
+
       setTimeout(() => {
-        setLoading(false)
-      }, 500)
+        setLoading(false);
+      }, 500);
     }
-    fetchPokemon()
+    
+    fetchPokemon();
   }, [offSet]);
-  useEffect(() => {
-    setLoading(true)
-  }, [offSet]);
+
+  const filteredPokemons = pokemons.filter((pokemon) => {
+    // Verifica a busca por texto
+    const matchName = pokemon.name.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Verifica a busca por categoria (tipo)
+    const matchType = typeFilter === "" || pokemon.types.includes(typeFilter);
+
+    return matchName && matchType;
+  });
 
   return (
-    <div className='Home maxWidth'>
+    <Box className='Home maxWidth' sx={{ paddingBottom: '2rem' }}>
       {loading && <LoadingScreen />}
       {!loading && (
         <>
-          <Header />
-          <Feed pokemons={pokemons} />
-          <div className="pagination">
-            <button onClick={handlePreviusPage} className='btn'>Voltar</button>
-            <button onClick={handleNextPage} className='btn'>Proximo</button>
-          </div>
+          <Header 
+            searchQuery={searchQuery} 
+            setSearchQuery={setSearchQuery} 
+            typeFilter={typeFilter} 
+            setTypeFilter={setTypeFilter} 
+          />
+          
+          <Feed pokemons={filteredPokemons} />
+          
+          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2, marginTop: 4 }}>
+            <Button 
+              variant="contained" 
+              onClick={handlePreviusPage} 
+              disabled={offSet === 0} 
+            >
+              Voltar
+            </Button>
+            <Button 
+              variant="contained" 
+              onClick={handleNextPage}
+            >
+              Proximo
+            </Button>
+          </Box>
         </>
       )}
-    </div>
+    </Box>
   )
 }

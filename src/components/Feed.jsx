@@ -1,18 +1,22 @@
 import React from 'react'
-import '../css/Feed.css'
 import Card from './Card'
 import { Link } from 'react-router-dom'
+import { Box } from '@mui/material'
 
 const Feed = ({ pokemons }) => {
-    console.log(pokemons)
     return (
-        <section className='pokemon-feed'>
+        <Box sx={{ 
+            marginTop: '8rem', 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+            gap: 2 
+        }}>
             {pokemons.map((pokemon) => (
-                <Link to={`/${pokemon.name}`} key={pokemon.name}>
+                <Link to={`/${pokemon.name}`} key={pokemon.name} style={{ textDecoration: 'none' }}>
                     <Card data={pokemon} />
                 </Link>
             ))}
-        </section>
+        </Box>
     )
 }
 
